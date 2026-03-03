@@ -14,6 +14,7 @@ declare global {
 
 interface DesignState {
   title: string;
+  additionalText: string[];
   scene: string;
   style: string;
   aspectRatio: string;
@@ -33,9 +34,11 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showWatermark, setShowWatermark] = useState(false);
 
   const [design, setDesign] = useState<DesignState>({
     title: '',
+    additionalText: [],
     scene: '',
     style: '',
     aspectRatio: '1:1',
@@ -77,6 +80,7 @@ export default function App() {
       setDesign(prev => ({
         ...prev,
         title: suggestions.title || prev.title,
+        additionalText: suggestions.additional_text || prev.additionalText,
         scene: suggestions.scene || prev.scene,
         style: suggestions.style || prev.style,
         aspectRatio: suggestions.suggested_ratio || prev.aspectRatio,
@@ -202,6 +206,45 @@ export default function App() {
               </div>
 
               <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Các nội dung chữ khác</label>
+                <div className="space-y-2">
+                  {design.additionalText.map((text, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={text}
+                        onChange={e => {
+                          const newText = [...design.additionalText];
+                          newText[idx] = e.target.value;
+                          setDesign({...design, additionalText: newText});
+                        }}
+                        className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                        placeholder="Nhập nội dung..."
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newText = [...design.additionalText];
+                          newText.splice(idx, 1);
+                          setDesign({...design, additionalText: newText});
+                        }}
+                        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center w-10"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setDesign({...design, additionalText: [...design.additionalText, '']})}
+                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 mt-1"
+                  >
+                    + Thêm nội dung chữ
+                  </button>
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Bối cảnh / Nền</label>
                 <textarea
                   value={design.scene}
@@ -291,6 +334,19 @@ export default function App() {
                   })}
                 </div>
               </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="watermark"
+                  checked={showWatermark}
+                  onChange={(e) => setShowWatermark(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                />
+                <label htmlFor="watermark" className="text-sm text-slate-700 font-medium cursor-pointer">
+                  Thêm chữ "by AI" vào góc ảnh
+                </label>
+              </div>
             </div>
 
             {error && (
@@ -337,11 +393,18 @@ export default function App() {
                   <p className="text-sm font-medium animate-pulse">Đang thiết kế...</p>
                 </div>
               ) : generatedImage ? (
-                <img
-                  src={generatedImage}
-                  alt="Generated design"
-                  className="max-w-full max-h-full object-contain rounded-lg shadow-md"
-                />
+                <div className="relative inline-block">
+                  <img
+                    src={generatedImage}
+                    alt="Generated design"
+                    className="max-w-full max-h-full object-contain rounded-lg shadow-md"
+                  />
+                  {showWatermark && (
+                    <div className="absolute bottom-2 right-2 text-white/60 text-[10px] font-medium pointer-events-none drop-shadow-sm">
+                      by AI
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="text-center text-slate-400 max-w-sm">
                   <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
